@@ -3,11 +3,15 @@ from mcp.server.fastmcp import FastMCP
 from starlette.routing import Route
 from starlette.responses import PlainTextResponse
 from starlette.middleware.trustedhost import TrustedHostMiddleware
+from mcp.server.transport_security import TransportSecuritySettings
 
 REPLIES = "/tmp/replies.json"
 
 mcp = FastMCP("line-push")
 mcp.settings.streamable_http_path = "/mcp"
+mcp.settings.transport_security = TransportSecuritySettings(
+    allowed_hosts=["*"], allowed_origins=["*"]
+)
 
 @mcp.tool()
 def push_line(text: str) -> str:
