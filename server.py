@@ -65,4 +65,5 @@ app = Starlette(
         Mount("/", app=inner),
     ],
     middleware=[Middleware(FixHost)],
+    lifespan=lambda _: inner.router.lifespan_context(inner),
 )
