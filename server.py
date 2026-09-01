@@ -29,15 +29,20 @@ def push_line(text: str) -> str:
 
 @mcp.tool()
 def read_replies() -> str:
-    """讀取我從 LINE 傳來、還沒處理的訊息。讀完會清空。"""
+    """讀取我從 LINE 傳來、還沒處理的訊息。"""
     try:
         with open(REPLIES) as f:
             msgs = json.load(f)
     except Exception:
         return "（沒有新訊息）"
+    return "\n".join(msgs) if msgs else "（沒有新訊息）"
+
+@mcp.tool()
+def clear_replies() -> str:
+    """清空已處理的 LINE 訊息。每天早上處理完才呼叫。"""
     with open(REPLIES, "w") as f:
         json.dump([], f)
-    return "\n".join(msgs) if msgs else "（沒有新訊息）"
+    return "cleared"
 
 async def webhook(request):
     body = await request.json()
