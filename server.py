@@ -1,10 +1,10 @@
 import os, httpx
-from mcp.server.mcpserver import MCPServer
+from mcp.server.fastmcp import FastMCP
 
-mcp = MCPServer("line-push",
-                host="0.0.0.0",
-                port=int(os.environ.get("PORT", 8000)),
-                streamable_http_path="/mcp-steph2475")
+mcp = FastMCP("line-push",
+              host="0.0.0.0",
+              port=int(os.environ.get("PORT", 8000)),
+              streamable_http_path="/mcp-7f3a9c2e")
 
 @mcp.tool()
 def push_line(text: str) -> str:
