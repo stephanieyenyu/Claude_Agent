@@ -1,14 +1,15 @@
-import os, httpx
+import os, json, httpx
 from mcp.server.fastmcp import FastMCP
+from starlette.routing import Route
+from starlette.responses import PlainTextResponse
 
-mcp = FastMCP("line-push",
-              host="0.0.0.0",
-              port=int(os.environ.get("PORT", 8000)),
-              streamable_http_path="/mcp-steph2475")
+REPLIES = "/tmp/replies.json"
+
+mcp = FastMCP("line-push")
 
 @mcp.tool()
 def push_line(text: str) -> str:
-    """把今日待辦推播到我的 LINE。收件人固定，不能指定。"""
+    """把訊息推播到我的 LINE。收件人固定，不能指定。"""
     r = httpx.post(
         "https://api.line.me/v2/bot/message/push",
         headers={"Authorization": f"Bearer {os.environ['LINE_TOKEN']}"},
@@ -17,5 +18,33 @@ def push_line(text: str) -> str:
     )
     return f"{r.status_code} {r.text}"
 
-if __name__ == "__main__":
-    mcp.run(transport="streamable-http")
+@mcp.tool()
+def read_replies() -> str:
+    """讀取我從 LINE 傳來、還沒處理的訊息。讀完會清空。"""
+    try:
+        with open(REPLIES) as f:
+            msgs = json.load(f)
+    except Exception:
+        return "（沒有新訊息）"
+    with open(REPLIES, "w") as f:
+        json.dump([], f)
+    return "\n".join(msgs) if msgs else "（沒有新訊息）"
+
+
+async def webhook(request):
+    body = await request.json()
+    msgs = []
+    try:
+        with open(REPLIES) as f:
+            msgs = json.load(f)
+    except Exception:
+        pass
+    for e in body.get("events", []):
+        if e.get("type") == "message" and e["message"].get("type") == "text":
+            msgs.append(e["message"]["text"])
+    with open(REPLIES, "w") as f:
+        json.dump(msgs, f, ensure_ascii=False)
+    return PlainTextResponse("OK")
+
+app = mcp.streamable_http_app()
+app.routes.append(Route("/webhook", webhook, methods=["POST"]))
