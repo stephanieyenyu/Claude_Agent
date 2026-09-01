@@ -46,5 +46,8 @@ async def webhook(request):
         json.dump(msgs, f, ensure_ascii=False)
     return PlainTextResponse("OK")
 
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+
 app = mcp.streamable_http_app()
 app.routes.append(Route("/webhook", webhook, methods=["POST"]))
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
