@@ -2,10 +2,12 @@ import os, json, httpx
 from mcp.server.fastmcp import FastMCP
 from starlette.routing import Route
 from starlette.responses import PlainTextResponse
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 REPLIES = "/tmp/replies.json"
 
 mcp = FastMCP("line-push")
+mcp.settings.streamable_http_path = "/mcp"
 
 @mcp.tool()
 def push_line(text: str) -> str:
@@ -30,7 +32,6 @@ def read_replies() -> str:
         json.dump([], f)
     return "\n".join(msgs) if msgs else "（沒有新訊息）"
 
-
 async def webhook(request):
     body = await request.json()
     msgs = []
@@ -45,8 +46,6 @@ async def webhook(request):
     with open(REPLIES, "w") as f:
         json.dump(msgs, f, ensure_ascii=False)
     return PlainTextResponse("OK")
-
-from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 app = mcp.streamable_http_app()
 app.routes.append(Route("/webhook", webhook, methods=["POST"]))
