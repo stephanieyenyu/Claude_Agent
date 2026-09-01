@@ -53,4 +53,16 @@ async def webhook(request):
 
 app = mcp.streamable_http_app()
 app.routes.append(Route("/webhook", webhook, methods=["POST"]))
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
+
+class FixHost:
+    def __init__(self, inner):
+        self.inner = inner
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            scope["headers"] = [
+                (b"host", b"localhost") if k == b"host" else (k, v)
+                for k, v in scope["headers"]
+            ]
+        await self.inner(scope, receive, send)
+
+app = FixHost(app)
