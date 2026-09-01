@@ -5,11 +5,16 @@ from starlette.routing import Route, Mount
 from starlette.responses import PlainTextResponse
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from mcp.server.transport_security import TransportSecuritySettings
 
 REPLIES = "/tmp/replies.json"
 
 mcp = FastMCP("line-push")
 mcp.settings.streamable_http_path = "/mcp"
+mcp.settings.transport_security = TransportSecuritySettings(
+    allowed_hosts=["claude-agent-8nvc.onrender.com"],
+    allowed_origins=["*"],
+)
 
 @mcp.tool()
 def push_line(text: str) -> str:
@@ -51,10 +56,7 @@ async def webhook(request):
 
 class FixHost(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
-        request.scope["headers"] = [
-            (b"host", b"localhost") if k == b"host" else (k, v)
-            for k, v in request.scope["headers"]
-        ]
+        return await call_next(request)
         return await call_next(request)
 
 inner = mcp.streamable_http_app()
