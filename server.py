@@ -4,7 +4,7 @@ from mcp.server.fastmcp import FastMCP
 mcp = FastMCP("line-push",
               host="0.0.0.0",
               port=int(os.environ.get("PORT", 8000)),
-              streamable_http_path="/mcp-7f3a9c2e")
+              streamable_http_path="/mcp-steph2475")
 
 @mcp.tool()
 def push_line(text: str) -> str:
