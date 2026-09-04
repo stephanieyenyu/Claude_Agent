@@ -1,11 +1,11 @@
 import os, json, httpx
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from starlette.applications import Starlette
 from starlette.routing import Route, Mount
 from starlette.responses import PlainTextResponse
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
-from mcp.server.transport_security import TransportSecuritySettings
 
 REPLIES = "/tmp/replies.json"
 
@@ -29,7 +29,7 @@ def push_line(text: str) -> str:
 
 @mcp.tool()
 def read_replies() -> str:
-    """讀取我從 LINE 傳來、還沒處理的訊息。"""
+    """讀取我從 LINE 傳來、還沒處理的訊息。不會清空。"""
     try:
         with open(REPLIES) as f:
             msgs = json.load(f)
@@ -59,15 +59,18 @@ async def webhook(request):
         json.dump(msgs, f, ensure_ascii=False)
     return PlainTextResponse("OK")
 
+async def health(request):
+    return PlainTextResponse("ok")
+
 class FixHost(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
-        return await call_next(request)
         return await call_next(request)
 
 inner = mcp.streamable_http_app()
 
 app = Starlette(
     routes=[
+        Route("/health", health, methods=["GET"]),
         Route("/webhook", webhook, methods=["POST"]),
         Mount("/", app=inner),
     ],
